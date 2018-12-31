@@ -14,7 +14,8 @@ if(Sys.getenv("TOGGL_TOKEN") == "" || Sys.getenv("TOGGL_WORKSPACE") == "") {
 togglToken <- Sys.getenv("TOGGL_TOKEN")
 togglWid   <- Sys.getenv("TOGGL_WORKSPACE")
 
-getClients <- function(token, wid) {
+
+getClients <- function(token, wid, verbose = FALSE) {
   username <- token
   password <- "api_token"
 
@@ -25,11 +26,15 @@ getClients <- function(token, wid) {
 
   call <- paste(base,endpoint,wid,what, sep="/")
 
-  result <- GET(call, authenticate(username,password), verbose())
+  if(verbose) {
+    result <- GET(call, authenticate(username,password), verbose())
+  } else {
+    result <- GET(call, authenticate(username,password))
+  }
   return(result)
 }
 
-getProjects <- function(token, project) {
+getProjects <- function(token, cid, verbose = FALSE) {
   username <- token
   password <- "api_token"
 
@@ -38,9 +43,14 @@ getProjects <- function(token, project) {
   endpoint <- "v8/clients"
   what <- "projects"
 
-  call <- paste(base,endpoint,project,what, sep="/")
+  call <- paste(base,endpoint,cid,what, sep="/")
 
-  result <- GET(call, authenticate(username,password), verbose())
+  if(verbose) {
+    result <- GET(call, authenticate(username,password), verbose())
+  } else {
+    result <- GET(call, authenticate(username,password))
+  }
+
   return(result)
 }
 
@@ -51,8 +61,12 @@ projectPlot <- function(data, name) {
     labs(x=NULL, y="Hours", title=name, caption="data from toggl")
 
   if ("actual_hours" %in% colnames(data)) {
-    v1 <- v1 + geom_col(aes(x=name, y=actual_hours, fill=hex_color),
-                        show.legend = FALSE)
+    v1 <- v1 + geom_col(aes(
+      x=name,
+      y=actual_hours,
+      fill=hex_color),
+      color = "Black",
+      show.legend = FALSE)
   }
   if ("estimated_hours" %in% colnames(data)) {
     v1 <- v1 + geom_point(aes(x=name, y=estimated_hours),
@@ -95,5 +109,4 @@ if(nrow(clients) > 0) {
   }
 }
 
-# curl -u $api_token:api_token -X GET "https://toggl.com/api/v8/clients/$volvo_id/projects" -o volvo-projects.json
 
