@@ -1,0 +1,122 @@
+---
+title: "shiny-projects"
+runtime: shiny
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE}
+#  install.packages("tidyverse")
+library(tidyverse)
+#  install.packages("jsonlite")
+library(jsonlite)
+# install.package("httr")
+library(httr)
+```
+
+```{r init, include=FALSE}
+if(Sys.getenv("TOGGL_TOKEN") == "" || Sys.getenv("TOGGL_WORKSPACE") == "") {
+  stop("Missing Environment Variables: TOGGL_TOKEN or TOGGL_WORKSPACE")
+}
+
+togglToken <- Sys.getenv("TOGGL_TOKEN")
+togglWid   <- Sys.getenv("TOGGL_WORKSPACE")
+
+getClients <- function(token, wid, verbose = FALSE) {
+  username <- token
+  password <- "api_token"
+
+
+  base <- "https://toggl.com/api"
+  endpoint <- "v8/workspaces"
+  what <- "clients"
+
+  call <- paste(base,endpoint,wid,what, sep="/")
+
+  if(verbose) {
+    result <- GET(call, authenticate(username,password), verbose())
+  } else {
+    result <- GET(call, authenticate(username,password))
+  }
+  return(result)
+}
+
+getProjects <- function(token, cid, verbose = FALSE) {
+  username <- token
+  password <- "api_token"
+
+
+  base <- "https://toggl.com/api"
+  endpoint <- "v8/clients"
+  what <- "projects"
+
+  call <- paste(base,endpoint,cid,what, sep="/")
+
+  if(verbose) {
+    result <- GET(call, authenticate(username,password), verbose())
+  } else {
+    result <- GET(call, authenticate(username,password))
+  }
+
+  return(result)
+}
+
+projectPlot <- function(data, name) {
+  # ToDo: check if data contains estimated_hours, colnames()
+  v1 <- ggplot(data=data) +
+    theme(axis.text.x = element_text(angle = 25, hjust = 1, size = 8)) +
+    labs(x=NULL, y="Hours", title=name, caption="data from toggl")
+
+  if ("actual_hours" %in% colnames(data)) {
+    v1 <- v1 + geom_col(aes(
+      x=name,
+      y=actual_hours,
+      fill=hex_color),
+      color = "Black", 
+      show.legend = FALSE)
+  }
+  if ("estimated_hours" %in% colnames(data)) {
+    v1 <- v1 + geom_point(aes(x=name, y=estimated_hours),
+                          shape = 3, size = 2)
+  }
+
+  return(v1)
+}
+```
+
+```{r clients, echo=FALSE}
+clientsJSON <- getClients(togglToken, togglWid)
+
+clients <- as.tibble(fromJSON(content(clientsJSON, "text")))
+clients <- arrange(clients, name)
+```
+
+To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+## Projects
+
+Two Shiny objects embedded below, the input dropdown is made up from the response when checking [toggl](www.toogl.com) for all clients in the workspace. Once you select the name of a client, a rest call will fetch the active projects for that client and present registered hours in a simple bar graph.
+
+
+This depends on two environment variables: TOGGL_TOKEN and TOGGL_WORKSPACE
+
+
+```{r eruptions, echo=FALSE}
+inputPanel(
+  selectInput("client", label = "Client Name:",
+              choices = clients$name, selected = "NA")
+)
+
+renderPlot({
+    cId <- subset(clients, name == input$client)$id
+ 
+    projectsJSON <- getProjects(togglToken, cId)
+    projects <- as.tibble(fromJSON(content(projectsJSON, "text")))
+    p1 <- projectPlot(projects, input$client)
+    plot(p1)
+})
+```
+
