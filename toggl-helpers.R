@@ -24,6 +24,25 @@ getClients <- function(token, wid, verbose = FALSE) {
   return(result)
 }
 
+getUsers <- function(token, wid, verbose = FALSE) {
+  username <- token
+  password <- "api_token"
+
+
+  base <- "https://toggl.com/api"
+  endpoint <- "v8/workspaces"
+  what <- "workspace_users"
+
+  call <- paste(base,endpoint,wid,what, sep="/")
+
+  if(verbose) {
+    result <- GET(call, authenticate(username,password), verbose())
+  } else {
+    result <- GET(call, authenticate(username,password))
+  }
+  return(result)
+}
+
 getProjects <- function(token, cid, verbose = FALSE) {
   username <- token
   password <- "api_token"
@@ -47,8 +66,9 @@ getProjects <- function(token, cid, verbose = FALSE) {
 addStyle <- function(input) {
 
   data <- input
-  data$style <- as.character(as.numeric(!data$billable))
-
+  if("billable" %in% colnames(data)) {
+    data$style <- as.character(as.numeric(!data$billable))
+  }
   return(data)
 }
 

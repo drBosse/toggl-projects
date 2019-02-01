@@ -28,6 +28,13 @@ clients <- as.tibble(fromJSON(content(clientsJSON, "text")))
 clients <- arrange(clients, name)
 ```
 
+```{r users, echo=FALSE}
+usersJSON <- getUsers(togglToken, togglWid)
+
+users <- as.tibble(fromJSON(content(usersJSON, "text")))
+users <- arrange(users, name)
+```
+
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
 ## Projects
@@ -40,17 +47,18 @@ This depends on two environment variables: TOGGL_TOKEN and TOGGL_WORKSPACE
 
 ```{r eruptions, echo=FALSE}
 inputPanel(
-  selectInput("client", label = "Client Name:",
-              choices = clients$name, selected = "NA")
+  selectInput("client", label = "Client Name:", choices = c("", clients$name), selected = "NA"), 
+  selectInput("user", label = "User Name: ", choices = c("", users$name), selected = "NA")
 )
 
 renderPlot({
+  if(input$client != "") {
     cId <- subset(clients, name == input$client)$id
  
     projectsJSON <- getProjects(togglToken, cId)
     projects <- as.tibble(fromJSON(content(projectsJSON, "text")))
     p1 <- projectPlot(projects, input$client)
     plot(p1)
+  }
 })
 ```
-
