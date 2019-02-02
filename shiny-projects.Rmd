@@ -18,7 +18,7 @@ library(httr)
 ```
 
 ```{r init, include=FALSE}
-source('toggl-helpers.R')
+source("toggl-helpers.R")
 ```
 
 ```{r clients, echo=FALSE}
@@ -47,14 +47,14 @@ This depends on two environment variables: TOGGL_TOKEN and TOGGL_WORKSPACE
 
 ```{r eruptions, echo=FALSE}
 inputPanel(
-  selectInput("client", label = "Client Name:", choices = c("", clients$name), selected = "NA"), 
+  selectInput("client", label = "Client Name:", choices = c("", clients$name), selected = "NA"),
   selectInput("user", label = "User Name: ", choices = c("", users$name), selected = "NA")
 )
 
 renderPlot({
-  if(input$client != "") {
+  if (input$client != "") {
     cId <- subset(clients, name == input$client)$id
- 
+
     projectsJSON <- getProjects(togglToken, cId)
     projects <- as.tibble(fromJSON(content(projectsJSON, "text")))
     p1 <- projectPlot(projects, input$client)
